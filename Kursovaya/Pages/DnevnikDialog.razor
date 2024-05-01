@@ -1,0 +1,109 @@
+﻿@using Kursovaya.Services
+@using Kursovaya.Pages
+@inject CurrentUserService CurrentUserService
+@inject PadService PadService
+@inject ProductService ProductService
+
+@if (ShowDnevnikDialog)
+{
+    <div class="ok-dialog-wrapper">
+        <div class="ok-dialog-content">
+            <h3>@DialogTitle</h3>
+            <select @bind="SelectedProductId">
+                <option value="">Выберите продукт</option>
+                @foreach (var product in Paxds)
+                {
+                    <option value="@product.ID_Paxd">@product.Name</option>
+                }
+            </select>
+            <input type="number" step="0.01" placeholder="Грамм" @bind="GramValue" />
+
+            @if (SelectedProductId.HasValue && SelectedProductId != 0 && GramValue.HasValue && GramValue > 0)
+            {
+                var selectedProduct = Paxds.FirstOrDefault(p => p.ID_Paxd == SelectedProductId);
+                if (selectedProduct != null)
+                {
+                    var gramsMultiplier = GramValue.Value / 100; // множитель
+                    var fatsToAdd = selectedProduct.Fats * gramsMultiplier;
+                    var carbohydratesToAdd = selectedProduct.Carbohydrates * gramsMultiplier;
+                    var proteinsToAdd = selectedProduct.Proteins * gramsMultiplier;
+                    var caloriesToAdd = selectedProduct.Caloric * gramsMultiplier;
+
+                    <table>
+                        <tr>
+                            <th>Жиры</th>
+                            <th>Углеводы</th>
+                            <th>Белки</th>
+                            <th>Калории</th>
+                        </tr>
+                        <tr>
+                            <td>@fatsToAdd.ToString("0.##")</td>
+                            <td>@carbohydratesToAdd.ToString("0.##")</td>
+                            <td>@proteinsToAdd.ToString("0.##")</td>
+                            <td>@caloriesToAdd.ToString("0.##")</td>
+                        </tr>
+                    </table>
+
+                    <button class="next-button" @onclick="() => SaveData(fatsToAdd, carbohydratesToAdd, proteinsToAdd, caloriesToAdd)">Сохранить</button>
+                }
+            }
+
+            <button class="close-button" @onclick="CloseDialog">Отмена</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool ShowDnevnikDialog { get; set; }
+
+    [Parameter]
+    public string DialogTitle { get; set; }
+
+    [Parameter]
+    public DateTime SelectedDate { get; set; }
+
+    [Parameter]
+    public List<PaxdBD> Paxds { get; set; }
+
+    [Parameter]
+    public Action<double, double, double, double> UpdateNutrients { get; set; }
+
+    [Parameter]
+    public Func<Task> UpdateNutrientTotals { get; set; }
+
+    private int? SelectedProductId { get; set; }
+    private double? GramValue { get; set; }
+
+    private async Task SaveData(double fatsToAdd, double carbohydratesToAdd, double proteinsToAdd, double caloriesToAdd)
+    {
+        if (SelectedProductId.HasValue && SelectedProductId != 0 && GramValue.HasValue && GramValue > 0)
+        {
+            int currentUserId = CurrentUserService.CurrentUserId;
+
+            PadBD padData = new PadBD
+                {
+                    ID_Paxd = SelectedProductId.Value,
+                    ID = currentUserId,
+                    Gram = (decimal)GramValue.Value,
+                    Category = DialogTitle,
+                    Date = SelectedDate
+                };
+
+            await PadService.SavePadDataAsync(padData);
+
+            UpdateNutrients(fatsToAdd, carbohydratesToAdd, proteinsToAdd, caloriesToAdd);
+
+            await UpdateNutrientTotals();
+
+            CloseDialog();
+        }
+    }
+
+    private void CloseDialog()
+    {
+        ShowDnevnikDialog = false;
+        SelectedProductId = null;
+        GramValue = null;
+    }
+}

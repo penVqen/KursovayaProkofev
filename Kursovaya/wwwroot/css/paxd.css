@@ -1,0 +1,139 @@
+﻿html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.header {
+    text-align: center;
+    font-weight: bold;
+    font-size: 24px;
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-bottom: 2px solid #ddd;
+    width: 100%;
+    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+.header-text {
+    font-weight: bold;
+    font-size: 24px;
+    color: #8A2BE2;
+}
+
+.body-text {
+    font-weight: bold;
+    font-size: 24px;
+    color: #9370DB;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    padding-top: 60px;
+}
+
+.rectangle {
+    width: 250px;
+    background-color: #C0C0C0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+    margin-top: 50px;
+}
+
+.button {
+    background-color: #D9D9D9;
+    color: #8A2BE2;
+    padding: 10px 20px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+    .button:hover {
+        background-color: #B0B0B0;
+    }
+
+.my-body-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    margin-top: -80px;
+}
+
+.journal-text {
+    color: #8A2BE2;
+    font-size: 30px;
+    margin-right: 10px;
+}
+
+.data-form {
+    border: 2px solid #000;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    text-align: center;
+}
+
+    .data-form .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+    }
+
+    .data-form .form-label {
+        font-weight: bold;
+    }
+
+    .data-form .form-input {
+        padding: 10px;
+        border: 1px solid #000;
+        border-radius: 5px;
+        width: calc(100% - 22px);
+    }
+
+    .data-form .submit-button {
+        background-color: #8A2BE2;
+        color: #fff;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        .data-form .submit-button:hover {
+            background-color: #6a1b9a;
+        }
+
+.smaller-text {
+    font-size: 14px;
+}
+
+.text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}

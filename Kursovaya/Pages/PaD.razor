@@ -1,0 +1,172 @@
+﻿@page "/PAD"
+@inherits LayoutComponentBase
+
+@using Kursovaya.Services
+@using Kursovaya.Pages
+
+@inject RscCalculatorService RscCalculator
+@inject CurrentUserService CurrentUserService
+@inject ProductService _productService
+@inject PadService PadService
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Журнал</title>
+    <link href="css/header.css" rel="stylesheet" />
+    <link href="css/pad.css" rel="stylesheet" />
+    <link href="css/padokno.css" rel="stylesheet" />
+</head>
+<body>
+
+    <main>
+        <div class="header">
+            <span class="header-text">Sj</span><span class="body-text">Body</span>
+        </div>
+
+        <div class="rectangle">
+            <a class="button" href="/PAD">Журнал</a>
+            <a class="button" href="/Goal">Цель</a>
+            <a class="button" href="/Paxd">Продукты и блюда</a>
+            <a class="button" href="/Data">Данные</a>
+        </div>
+
+        <div class="my-body-container">
+            <span class="journal-text">Журнал потребления</span>
+            <input type="date" class="date-picker-input" value="@selectedDate.ToString("yyyy-MM-dd")" @onchange="HandleDateChange" />
+            <button class="journal-button" @onclick="ShowPadDialog">↓</button>
+        </div>
+
+        <div class="rectangle-container">
+            <button class="custom-rectangle" @onclick='() => ShowDnevnikDialog("Завтрак")'>
+                <div class="content">
+                    <span class="left-content">Завтрак</span>
+                </div>
+            </button>
+            <button class="custom-rectangle" @onclick='() => ShowDnevnikDialog("Обед")'>
+                <div class="content">
+                    <span class="left-content">Обед</span>
+                </div>
+            </button>
+            <button class="custom-rectangle" @onclick='() => ShowDnevnikDialog("Ужин")'>
+                <div class="content">
+                    <span class="left-content">Ужин</span>
+                </div>
+            </button>
+            <button class="custom-rectangle" @onclick='() => ShowDnevnikDialog("Перекус/Другое")'>
+                <div class="content">
+                    <span class="left-content">Перекус/Другое</span>
+                </div>
+            </button>
+        </div>
+
+        <div class="custom-large-rectangle">
+            <div class="nutrient-info">
+                <span class="nutrient">Жиры</span><span class="nutrient-zero">@fats.ToString("0.##")</span>
+                <span class="nutrient">Углеводы</span><span class="nutrient-zero">@carbohydrates.ToString("0.##")</span>
+                <span class="nutrient">Белки</span><span class="nutrient-zero">@proteins.ToString("0.##")</span>
+                <span class="nutrient">Калории</span><span class="nutrient-zero">@calories.ToString("0.##")</span>
+                <span class="nutrient">РСК</span><span class="nutrient-zero">@RscCalculator.CalculateRsc(CurrentUserService.CurrentUserId)</span>
+            </div>
+        </div>
+
+        <DnevnikDialog ShowDnevnikDialog="@showDnevnikDialog" DialogTitle="@dialogTitle" Paxds="@products" SelectedDate="@selectedDate" UpdateNutrients="@UpdateNutrients" UpdateNutrientTotals="@UpdateNutrientTotals" />
+
+        <PadDialog ShowPadDialog="@showPadDialog" Paxds="@products" SelectedDate="@selectedDate" PadEntries="@padEntries" />
+    </main>
+
+</body>
+</html>
+
+@code {
+    private DateTime selectedDate = DateTime.Today;
+    private bool showPadDialog = false;
+    private bool showDnevnikDialog = false;
+    private string dialogTitle = "";
+    private double gramValue = 0;
+    private List<PaxdBD> products = new List<PaxdBD>();
+    private List<PadBD> padEntries = new List<PadBD>();
+    private double fats = 0;
+    private double carbohydrates = 0;
+    private double proteins = 0;
+    private double calories = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await _productService.GetProductsAsync();
+        UpdateNutrientTotals();
+    }
+
+    private async Task HandleDateChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out DateTime result))
+        {
+            selectedDate = result;
+            showPadDialog = false;
+            showDnevnikDialog = false;
+
+            UpdateNutrientTotals();
+        }
+
+    }
+    private void ShowPadDialog()
+    {
+        showPadDialog = true;
+        showDnevnikDialog = false;
+    }
+
+    private void ShowDnevnikDialog(string category)
+    {
+        dialogTitle = category;
+        showDnevnikDialog = true;
+        showPadDialog = false;
+    }
+
+    private void CloseDialog()
+    {
+        showPadDialog = false;
+        showDnevnikDialog = false;
+    }
+
+    private async Task UpdateNutrientTotals()
+    {
+        fats = 0;
+        carbohydrates = 0;
+        proteins = 0;
+        calories = 0;
+
+        padEntries = await PadService.GetPadEntriesByDateAndUser(selectedDate, CurrentUserService.CurrentUserId);
+
+        foreach (var entry in padEntries)
+        {
+            var product = await _productService.GetProductById(entry.ID_Paxd);
+
+            if (product != null)
+            {
+                var gramsMultiplier = (double)entry.Gram / 100.0;
+
+                fats += product.Fats * gramsMultiplier;
+                carbohydrates += product.Carbohydrates * gramsMultiplier;
+                proteins += product.Proteins * gramsMultiplier;
+                calories += product.Caloric * gramsMultiplier;
+            }
+        }
+
+        padEntries = await PadService.GetPadEntriesByDateAndUser(selectedDate, CurrentUserService.CurrentUserId);
+
+        StateHasChanged();
+    }
+
+
+    private void UpdateNutrients(double fatsToAdd, double carbohydratesToAdd, double proteinsToAdd, double caloriesToAdd)
+    {
+        fats += fatsToAdd;
+        carbohydrates += carbohydratesToAdd;
+        proteins += proteinsToAdd;
+        calories += caloriesToAdd;
+
+        StateHasChanged();
+    }
+}

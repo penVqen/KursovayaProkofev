@@ -1,0 +1,107 @@
+﻿@page "/Paxd"
+@inherits LayoutComponentBase
+@inject ApplicationDbContext dbContext
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Продукты и блюда</title>
+    <link href="css/header.css" rel="stylesheet" />
+    <link href="css/paxd.css" rel="stylesheet" />
+    <link href="css/okno.css" rel="stylesheet" />
+</head>
+<body>
+
+    <main>
+        <div class="header">
+            <span class="header-text">Sj</span><span class="body-text">Body</span>
+        </div>
+
+        <div class="rectangle">
+            <a class="button" href="/PAD">Журнал</a>
+            <a class="button" href="/Goal">Цель</a>
+            <a class="button" href="/Paxd">Продукты и блюда</a>
+            <a class="button" href="/Data">Данные</a>
+        </div>
+
+        <div class="container data-form">
+            <div class="form-group">
+                <label for="name" class="form-label">Наименование</label>
+                <input type="text" id="name" @bind="newProduct.Name" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="caloric" class="form-label">Калорийность</label>
+                <input type="number" id="caloric" @bind="newProduct.Caloric" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="proteins" class="form-label">Белки</label>
+                <input type="number" id="proteins" @bind="newProduct.Proteins" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="fats" class="form-label">Жиры</label>
+                <input type="number" id="fats" @bind="newProduct.Fats" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="carbohydrates" class="form-label">Углеводы</label>
+                <input type="number" id="carbohydrates" @bind="newProduct.Carbohydrates" class="form-input">
+            </div>
+            <button type="button" class="button" @onclick="AddProduct">Сохранить</button>
+        </div>
+
+        <div class="my-body-container">
+            <div class="text-container">
+                <span class="journal-text">Продукты и блюда</span>
+                <span class="smaller-text">Добавление новой записи</span>
+            </div>
+        </div>
+
+
+        <div class="dialog-wrapper @(showPaxdSuccess || showPaxdError ? "active" : "")">
+            <SPaxd Visible="@showPaxdSuccess" OnClose="HandleSuccessNext" />
+            <EPaxd Visible="@showPaxdError" OnClose="HandleErrorBack" />
+        </div>
+
+    </main>
+
+</body>
+</html>
+
+@code {
+    private PaxdBD newProduct = new PaxdBD();
+
+    private bool showPaxdSuccess = false;
+    private bool showPaxdError = false;
+
+    private async Task AddProduct()
+    {
+        if (!string.IsNullOrWhiteSpace(newProduct.Name) &&
+            (newProduct.Caloric >= 0 || newProduct.Caloric == null) &&
+            (newProduct.Proteins >= 0 || newProduct.Proteins == null) &&
+            (newProduct.Fats >= 0 || newProduct.Fats == null) &&
+            (newProduct.Carbohydrates >= 0 || newProduct.Carbohydrates == null))
+        {
+            dbContext.Paxds.Add(newProduct);
+            await dbContext.SaveChangesAsync();
+
+            showPaxdSuccess = true;
+        }
+        else
+        {
+            showPaxdError = true;
+        }
+
+        newProduct = new PaxdBD();
+    }
+
+    private async Task HandleErrorBack()
+    {
+        showPaxdError = false;
+    }
+
+    private async Task HandleSuccessNext()
+    {
+        showPaxdSuccess = false;
+    }
+}

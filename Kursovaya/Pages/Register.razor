@@ -1,0 +1,138 @@
+﻿@page "/Register"
+@inherits LayoutComponentBase
+
+@inject SqliteUserDataService UserDataService
+@inject NavigationManager NavigationManager
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link href="css/menu.css" rel="stylesheet" />
+    <link href="css/regg.css" rel="stylesheet" />
+    <link href="css/okno.css" rel="stylesheet" />
+</head>
+<body>
+
+    <main>
+
+        <div class="header">
+            <div class="header-left" style="font-weight: bold; font-size: 24px;">
+                <NavLink href="/" style="text-decoration: none; color: #8A2BE2;">Sj</NavLink><NavLink href="/" style="text-decoration: none; color: #9370DB;">Body</NavLink>
+            </div>
+            <div class="header-right">
+                <NavLink href="/Login" class="header-button">ВОЙТИ</NavLink>
+                <NavLink href="/Register" class="header-button register-button">РЕГИСТРАЦИЯ</NavLink>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="registration-form">
+                <h2>Регистрация</h2>
+                <div class="form-group">
+                    <label for="login" class="form-label">Логин</label>
+                    <input type="text" id="login" class="form-input" placeholder="Не меньше 5 символов" @bind="login">
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" id="password" class="form-input" placeholder="Не меньше 5 символов" @bind="password">
+                </div>
+                <div class="form-group">
+                    <label for="name" class="form-label">Имя</label>
+                    <input type="text" id="name" class="form-input" @bind="name">
+                </div>
+                <div class="form-group">
+                    <label for="birthdate" class="form-label">Дата рождения</label>
+                    <input type="date" id="birthdate" class="form-input" @bind="birthday">
+                </div>
+                <div class="form-group">
+                    <label for="gender" class="form-label" style="margin-bottom: 5px;">Пол</label>
+                    <div>
+                        <select id="gender" class="form-input" @bind="Gender">
+                            <option>Выбрать</option>
+                            <option value="Мужской">Мужской</option>
+                            <option value="Женский">Женский</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="weight" class="form-label">Вес</label>
+                    <input type="number" id="weight" class="form-input" @bind="weight">
+                </div>
+                <div class="form-group">
+                    <label for="height" class="form-label">Рост</label>
+                    <input type="number" id="height" class="form-input" @bind="height">
+                </div>
+                <button type="button" class="submit-button" @onclick="RegisterUserAsync">Зарегистрироваться</button>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="dialog-wrapper @(showErrorDialogReg || showSuccessDialogReg ? "active" : "")">
+        <SuccessDialogReg Visible="@showSuccessDialogReg" OnNext="HandleSuccessNext" />
+        <ErrorDialogReg Visible="@showErrorDialogReg" OnClose="HandleErrorBack" />
+    </div>
+
+</body>
+</html>
+
+@code {
+    private string? login;
+    private string? password;
+    private string? name;
+    private DateTime birthday;
+    private string? Gender = "Выбрать";
+    private decimal? weight;
+    private decimal? height;
+
+    private async Task RegisterUserAsync()
+    {
+        if (string.IsNullOrEmpty(login) || login.Length < 5 ||
+            string.IsNullOrEmpty(password) || password.Length < 5 ||
+            weight == null || height == null ||
+            weight > 1000 || height > 300 ||
+            Gender == "Выбрать" ||
+            string.IsNullOrEmpty(name))
+        {
+            showErrorDialogReg = true;
+            return;
+        }
+
+        // Хеширование пароля перед сохранением
+        string hashedPassword = MD5Hasher.GetMD5Hash(password);
+
+        bool isRegistered = await UserDataService.RegisterUserAsync(login, hashedPassword, name, birthday, Gender, weight ?? 0, height ?? 0);
+
+        if (isRegistered)
+        {
+            showSuccessDialogReg = true;
+        }
+        else
+        {
+            showErrorDialogReg = true;
+        }
+    }
+
+
+    private bool showSuccessDialogReg = false;
+    private bool showErrorDialogReg = false;
+
+    private async Task HandleSuccessNext()
+    {
+        NavigationManager.NavigateTo("/Login");
+    }
+
+    private async Task HandleErrorBack()
+    {
+        NavigationManager.NavigateTo("/Register");
+        showErrorDialogReg = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        birthday = DateTime.Today;
+    }
+}

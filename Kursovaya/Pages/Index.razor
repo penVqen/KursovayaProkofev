@@ -1,0 +1,63 @@
+﻿@page "/"
+
+@inherits LayoutComponentBase
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SjBody</title>
+    <link href="css/menu.css" rel="stylesheet" />
+    <style>
+        .container {
+            width: calc(100% - 900px);
+            margin-left: 400px;
+            padding: 100px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .image-container {
+            margin-left: auto;
+        }
+
+            .image-container img {
+                width: 700px;
+                height: 500px;
+            }
+    </style>
+</head>
+<body>
+
+    <main>
+
+        <div class="header">
+            <div class="header-left" style="font-weight: bold; font-size: 24px;">
+                <span style="color: #8A2BE2;">Sj</span><span style="color: #9370DB;">Body</span>
+            </div>
+            <div class="header-right">
+                <NavLink href="/Login" style="color: #8A2BE2;">ВОЙТИ</NavLink>
+            </div>
+        </div>
+
+        <div class="container">
+            <div>
+                <p>ОТКРОЙТЕ МИР ЗАБОТЫ О СЕБЕ С SJBODY:</p>
+                <p>ИНФОРМАЦИЯ ДЛЯ ВАШЕГО БЛАГОПОЛУЧИЯ,</p>
+                <p>ДОСТУПНАЯ В КАЖДОМ УГОЛКЕ!</p>
+                <div class="button-container">
+                    <NavLink href="/Register" style="background-color: #9370DB; color: #FFFF; font-weight: bold; padding: 10px 30px;">НАЧАТЬ ПОЛЬЗОВАТЬСЯ</NavLink>
+                </div>
+            </div>
+            <div class="image-container">
+                <img src="glav.jpg">
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>

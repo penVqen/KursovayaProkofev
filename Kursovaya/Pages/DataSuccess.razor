@@ -1,0 +1,21 @@
+﻿@if (Visible)
+{
+    <div class="rectangleqs error-dialog dialog-box">
+        <p class="error-message">Изменения сохранены</p>
+        <button class="close-button" @onclick="Close">Закрыть</button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private async Task Close()
+    {
+        Visible = false;
+        await OnClose.InvokeAsync();
+    }
+}

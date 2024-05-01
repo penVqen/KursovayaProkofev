@@ -1,0 +1,104 @@
+﻿@page "/Login"
+@inherits LayoutComponentBase
+
+@inject SqliteUserDataService UserDataService
+@inject NavigationManager NavigationManager
+@inject CurrentUserService CurrentUserService
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link href="css/login.css" rel="stylesheet" />
+    <link href="css/menu.css" rel="stylesheet" />
+    <link href="css/okno.css" rel="stylesheet" />
+</head>
+<body>
+
+    <main>
+        <div class="header">
+            <div class="header-left" style="font-weight: bold; font-size: 24px;">
+                <NavLink href="/" style="text-decoration: none; color: #8A2BE2;">Sj</NavLink><NavLink href="/" style="text-decoration: none; color: #9370DB;">Body</NavLink>
+            </div>
+            <div class="header-right">
+                <NavLink href="/Login" class="header-button">ВОЙТИ</NavLink>
+                <NavLink href="/Register" class="header-button register-button">РЕГИСТРАЦИЯ</NavLink>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="registration-form">
+                <h2>Авторизация</h2>
+                <div class="form-group">
+                    <label for="login" class="form-label">Логин</label>
+                    <input type="text" id="login" @bind="Username" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" id="password" @bind="UserPassword" class="form-input">
+                </div>
+                <button type="button" class="submit-button" @onclick="AuthenticateUserAsync">Войти</button>
+            </div>
+            <p class="register-link">Еще не зарегистрированы? <NavLink href="/Register" class="register-button">Зарегистрироваться!</NavLink></p>
+        </div>
+
+        <div class="dialog-wrapper @(showErrorDialog || showSuccessDialog ? "active" : "")">
+            <SuccessDialog Visible="@showSuccessDialog" OnNext="HandleSuccessNext" />
+            <ErrorDialog Visible="@showErrorDialog" OnClose="HandleErrorBack" />
+        </div>
+
+    </main>
+
+</body>
+</html>
+
+@code {
+    private string? Username { get; set; }
+    private string? UserPassword { get; set; }
+
+    private async Task AuthenticateUserAsync()
+    {
+        string? login = Username;
+        string? password = UserPassword;
+
+        if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password))
+        {
+            showErrorDialog = true;
+            return;
+        }
+
+        // Хеширование введенного пароля перед сравнением
+        string hashedPassword = MD5Hasher.GetMD5Hash(password);
+
+        bool isAuthenticated = await UserDataService.AuthenticateUserAsync(login, hashedPassword);
+
+        if (isAuthenticated)
+        {
+            int userId = await UserDataService.GetUserIdAsync(login);
+            CurrentUserService.CurrentUserId = userId;
+            showSuccessDialog = true;
+        }
+        else
+        {
+            showErrorDialog = true;
+        }
+    }
+
+    private bool showSuccessDialog = false;
+    private bool showErrorDialog = false;
+
+    private async Task HandleSuccessNext()
+    {
+        
+        NavigationManager.NavigateTo("/PAD");
+    }
+
+    private async Task HandleErrorBack()
+    {
+        
+        NavigationManager.NavigateTo("/Login");
+        showErrorDialog = false;
+    }
+}

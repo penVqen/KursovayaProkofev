@@ -1,0 +1,184 @@
+﻿@page "/Data"
+@inherits LayoutComponentBase
+@inject ApplicationDbContext DbContext
+@using Microsoft.EntityFrameworkCore
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Данные</title>
+    <link href="css/header.css" rel="stylesheet" />
+    <link href="css/data.css" rel="stylesheet" />
+    <link href="css/okno.css" rel="stylesheet" />
+</head>
+<body>
+
+    <main>
+        <div class="header">
+            <span class="header-text">Sj</span><span class="body-text">Body</span>
+        </div>
+
+        <div class="rectangle">
+            <a class="button" href="/PAD">Журнал</a>
+            <a class="button" href="/Goal">Цель</a>
+            <a class="button" href="/Paxd">Продукты и блюда</a>
+            <a class="button" href="/Data">Данные</a>
+        </div>
+
+        <div class="container">
+            <div class="data-form registration-form">
+                <div class="form-group">
+                    <label for="login" class="form-label">Логин</label>
+                    <input type="text" id="login" @bind="user.Login" class="form-input" readonly="@(!isEditMode)">
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="text" id="password" @bind="user.Password" class="form-input" readonly="@(!isEditMode)">
+                </div>
+                <div class="form-group">
+                    <label for="name" class="form-label">Имя</label>
+                    <input type="text" id="name" @bind="user.Name" class="form-input" readonly="@(!isEditMode)">
+                </div>
+                <div class="form-group">
+                    <label for="birthday" class="form-label">Дата рождения</label>
+                    <input type="date" id="birthday" @bind="user.Birthday" class="form-input" readonly="@(!isEditMode)">
+                </div>
+                <div class="form-group">
+                    <label for="gender" class="form-label">Пол</label>
+                    <div class="input-field">
+                        <select id="gender" @bind="user.Gender" class="form-input" disabled="@(!isEditMode)">
+                            <option value="Мужской">Мужской</option>
+                            <option value="Женский">Женский</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="weight" class="form-label">Вес</label>
+                    <input type="text" id="weight" @bind="user.Weight" class="form-input" readonly="@(!isEditMode)">
+                </div>
+                <div class="form-group">
+                    <label for="height" class="form-label">Рост</label>
+                    <input type="text" id="height" @bind="user.Height" class="form-input" readonly="@(!isEditMode)">
+                </div>
+                @if (!isEditMode)
+                {
+                    <div class="form-group">
+                        <label class="form-label">ИМТ</label>
+                        <input type="text" id="bmi" value="@CalculateBMI()" class="form-input" style="background-color: @(GetBMIColor(CalculateBMI())); color: white;" readonly>
+                    </div>
+                }
+            </div>
+
+            @if (!isEditMode)
+            {
+                <div class="form-group">
+                    <button type="button" class="button" @onclick="Edit">Изменить данные</button>
+                </div>
+            }
+            else
+            {
+                <div class="form-group">
+                    <button type="button" class="button" @onclick="Save">Сохранить изменения</button>
+                </div>
+            }
+        </div>
+
+        <div class="my-body-container">
+            <span class="journal-text">Данные пользователя</span>
+        </div>
+
+        <div class="dialog-wrapper @(showDataError || showDataSuccess ? "active" : "")">
+            <DataSuccess Visible="@showDataSuccess" OnClose="HandleSuccessNext" />
+            <DataError Visible="@showDataError" OnClose="HandleErrorBack" />
+        </div>
+
+    </main>
+
+</body>
+</html>
+
+@code {
+    private User user;
+    private bool isEditMode = false;
+
+    [Inject] private CurrentUserService CurrentUserService { get; set; }
+
+    private bool showDataSuccess = false;
+    private bool showDataError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        int currentUserId = CurrentUserService.CurrentUserId; // ID
+        user = await DbContext.Users.FirstOrDefaultAsync(u => u.ID == currentUserId);
+    }
+
+    private async Task Edit()
+    {
+        isEditMode = true;
+    }
+
+    private async Task Save()
+    {
+        if (user != null &&
+            !string.IsNullOrWhiteSpace(user.Login) &&
+            user.Login.Length >= 5 &&
+            !string.IsNullOrWhiteSpace(user.Name) &&
+            user.Birthday != null &&
+            !string.IsNullOrWhiteSpace(user.Gender) &&
+            user.Weight != null && user.Height != null &&
+            user.Weight <= 1000 && user.Height <= 300)
+        {
+            DbContext.Users.Update(user);
+            await DbContext.SaveChangesAsync();
+
+            showDataSuccess = true;
+            isEditMode = false;
+        }
+        else
+        {
+            showDataError = true;
+        }
+    }
+
+    private async Task HandleErrorBack()
+    {
+        showDataError = false;
+    }
+
+    private async Task HandleSuccessNext()
+    {
+        showDataSuccess = false;
+    }
+
+    private string CalculateBMI()
+    {
+        if (user != null && user.Weight != null && user.Height != null)
+        {
+            double weightInKg = (double)user.Weight;
+            double heightInMeters = (double)user.Height / 100;
+            double bmi = weightInKg / (heightInMeters * heightInMeters);
+            return bmi.ToString("0.00");
+        }
+        return "0.0";
+    }
+
+    private string GetBMIColor(string bmiValue)
+    {
+        if (decimal.TryParse(bmiValue, out decimal BMI))
+        {
+            if (BMI < 18.5m)
+                return "blue";
+            else if (BMI >= 18.5m && BMI < 25m)
+                return "green";
+            else if (BMI >= 25m && BMI < 30m)
+                return "Khaki";
+            else if (BMI >= 30m && BMI < 35m)
+                return "orange";
+            else
+                return "red";
+        }
+        return "white";
+    }
+}

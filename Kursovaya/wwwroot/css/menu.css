@@ -1,0 +1,29 @@
+﻿.header {
+    background-color: #f0f0f0;
+    padding: 10px 420px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #ddd;
+}
+
+.header-left {
+    margin-right: auto;
+}
+
+.header-right button {
+    background-color: #fff;
+    border: 2px solid #ccc;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    min-width: 100px;
+}
+
+    .header-right button:hover {
+        background-color: #ddd;
+    }
+
+body {
+    font-family: 'Roboto', sans-serif;
+}

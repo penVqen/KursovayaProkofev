@@ -1,0 +1,67 @@
+﻿@using Kursovaya.Services
+@using Kursovaya.Pages
+
+@if (ShowPadDialog)
+{
+    <div class="dialog-overlay">
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <h3>Записи добавления</h3>
+                <button class="close-button" @onclick="CloseDialog">×</button>
+            </div>
+            <div class="dialog-content">
+                @if (PadEntries != null && PadEntries.Any())
+                {
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Продукт</th>
+                                <th>Граммы</th>
+                                <th>Категория</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var entry in PadEntries.Where(e => e.Date.Date == SelectedDate.Date))
+                            {
+                                <tr>
+                                    <td>@GetProductName(entry.ID_Paxd)</td>
+                                    <td>@entry.Gram</td>
+                                    <td>@entry.Category</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p>Нет данных</p>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool ShowPadDialog { get; set; }
+
+    [Parameter]
+    public List<PadBD> PadEntries { get; set; }
+
+    [Parameter]
+    public DateTime SelectedDate { get; set; }
+
+    [Parameter]
+    public List<PaxdBD> Paxds { get; set; }
+
+    private string GetProductName(int productId)
+    {
+        var product = Paxds.FirstOrDefault(p => p.ID_Paxd == productId);
+        return product != null ? product.Name : "Н/Д";
+    }
+
+    private void CloseDialog()
+    {
+        ShowPadDialog = false;
+    }
+}

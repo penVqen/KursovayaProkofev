@@ -1,0 +1,270 @@
+﻿@page "/Goal"
+@inherits LayoutComponentBase
+
+@inject GoalDataService GoalDataService
+@inject GoalHistoryService GoalHistoryService
+@inject NavigationManager NavigationManager
+@inject CurrentUserService CurrentUserService
+@inject ApplicationDbContext dbContext
+@using Microsoft.EntityFrameworkCore
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Цель</title>
+    <link href="css/goal.css" rel="stylesheet" />
+    <link href="css/header.css" rel="stylesheet" />
+    <link href="css/okno.css" rel="stylesheet" />
+</head>
+<body>
+    <main>
+        <div class="header">
+            <span class="header-text">Sj</span><span class="body-text">Body</span>
+        </div>
+
+        <div class="my-body-container">
+            <span class="journal-text">Цель</span>
+        </div>
+
+        <div class="rectangle">
+            <a class="button" href="/PAD">Журнал</a>
+            <a class="button" href="/Goal">Цель</a>
+            <a class="button" href="/Paxd">Продукты и блюда</a>
+            <a class="button" href="/Data">Данные</a>
+        </div>
+
+        <div class="container">
+            @if (!hasGoal)
+            {
+                <form class="goal-form" @onsubmit="CreateGoal">
+                    <div class="form-group">
+                        <label for="diet-type" class="form-label">Тип диеты:</label>
+                        <select id="diet-type" name="diet-type" @bind="dietType" class="form-input">
+                            <option>Выбрать</option>
+                            <option value="Набор веса">Набор веса</option>
+                            <option value="Потеря веса">Потеря веса</option>
+                            <option value="Сохранение веса">Сохранение веса</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activity-level" class="form-label">Уровень активности:</label>
+                        <select id="activity-level" name="activity-level" @bind="activityLevel" class="form-input">
+                            <option>Выбрать</option>
+                            <option value="Сидячий">Сидячий</option>
+                            <option value="Малоактивный">Малоактивный</option>
+                            <option value="Активный">Активный</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="desired-weight" class="form-label">Желаемый вес в кг:</label>
+                        <input type="number" id="desired-weight" name="desired-weight" @bind="desiredWeight" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="start-date" class="form-label">Дата начала цели:</label>
+                        <input type="date" id="start-date" name="start-date" @bind="startDate" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="end-date" class="form-label">Дата окончания цели:</label>
+                        <input type="date" id="end-date" name="end-date" @bind="endDate" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="submit-button">Создать цель</button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="goal-info">
+                    <!-- пусто -->
+                </div>
+            }
+
+            @if (hasGoal)
+            {
+                <button @onclick="DeleteGoal" class="button">Удалить цель</button>
+            }
+        </div>
+
+        <div class="goal-history-header">
+            <h2>История целей</h2>
+        </div>
+
+        <div class="goal-history">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Тип диеты</th>
+                        <th>Уровень активности</th>
+                        <th>Желаемый вес</th>
+                        <th>Дата начала</th>
+                        <th>Дата окончания</th>
+                        <th>Нынешнее ИМТ</th>
+                        <th>Предполагаемое ИМТ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var goal in goalsHistory)
+                    {
+                        <tr>
+                            <td>@goal.Type</td>
+                            <td>@goal.Active</td>
+                            <td>@goal.Weight</td>
+                            <td>@goal.Start.ToShortDateString()</td>
+                            <td>@goal.End.ToShortDateString()</td>
+                            <td>@goal.CurrentBMI</td>
+                            <td>@goal.ExpectedBMI</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dialog-wrapper @(showGoalDialogError || showGoalDialogSuccess ? "active" : "")">
+            <GoalDialogError Visible="@showGoalDialogError" OnClose="HandleErrorBack" />
+            <GoalDialogSuccess Visible="@showGoalDialogSuccess" OnClose="HandleSuccessNext" />
+        </div>
+
+    </main>
+</body>
+</html>
+
+@code {
+    private string dietType = "Выбрать";
+    private string activityLevel = "Выбрать";
+    private decimal desiredWeight;
+    private DateTime startDate = DateTime.Today;
+    private DateTime endDate = DateTime.Today.AddDays(1);
+    private bool hasGoal = false;
+
+    private bool showGoalDialogError = false;
+    private bool showGoalDialogSuccess = false;
+    private List<GoalHistory> goalsHistory = new List<GoalHistory>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadGoalDataAsync();
+    }
+
+    private async Task LoadGoalDataAsync()
+    {
+        int currentUserId = CurrentUserService.CurrentUserId;
+        var goal = await GoalDataService.GetGoalAsync(currentUserId);
+        if (goal != null)
+        {
+            dietType = goal.Type;
+            activityLevel = goal.Active;
+            desiredWeight = goal.Weight;
+            startDate = goal.Start;
+            endDate = goal.End;
+            hasGoal = true;
+        }
+        await LoadGoalHistoryAsync();
+    }
+
+    private async Task LoadGoalHistoryAsync()
+    {
+        int currentUserId = CurrentUserService.CurrentUserId;
+        var currentUser = await dbContext.Users.FindAsync(currentUserId);
+        if (currentUser != null)
+        {
+            goalsHistory = await GoalHistoryService.GetGoalHistoryAsync(currentUserId);
+            goalsHistory.Reverse();
+
+            foreach (var goal in goalsHistory)
+            {
+                goal.CurrentBMI = CalculateBMI(currentUser.Weight, currentUser);
+                goal.ExpectedBMI = CalculateExpectedBMI(goal.Weight, currentUser);
+            }
+        }
+    }
+
+    private decimal CalculateBMI(decimal weight, User user)
+    {
+        if (user != null && user.Height != null)
+        {
+            double weightInKg = (double)weight;
+            double heightInMeters = (double)user.Height / 100;
+            double bmi = weightInKg / (heightInMeters * heightInMeters);
+            return Math.Round(Convert.ToDecimal(bmi), 2);
+        }
+        return 0.00m;
+    }
+
+    private decimal CalculateExpectedBMI(decimal weight, User user)
+    {
+        if (user != null && user.Height != null)
+        {
+            double weightInKg = (double)weight;
+            double heightInMeters = (double)user.Height / 100;
+            double bmi = weightInKg / (heightInMeters * heightInMeters);
+            return Math.Round(Convert.ToDecimal(bmi), 2);
+        }
+        return 0.00m;
+    }
+
+    private async Task CreateGoal()
+    {
+        int currentUserId = CurrentUserService.CurrentUserId;
+
+        if (hasGoal)
+        {
+            showGoalDialogError = true;
+        }
+        else
+        {
+            bool success = await GoalDataService.CreateGoalAsync(currentUserId, dietType, activityLevel, desiredWeight, startDate, endDate);
+
+            if (success)
+            {
+                showGoalDialogSuccess = true;
+                hasGoal = true;
+
+                await GoalHistoryService.AddGoalToHistoryAsync(new GoalBD
+                    {
+                        ID = currentUserId,
+                        Type = dietType,
+                        Active = activityLevel,
+                        Weight = desiredWeight,
+                        Start = startDate,
+                        End = endDate
+                    });
+
+                await LoadGoalHistoryAsync();
+            }
+            else
+            {
+                showGoalDialogError = true;
+            }
+        }
+    }
+
+
+    private async Task HandleErrorBack()
+    {
+        showGoalDialogError = false;
+    }
+
+    private async Task HandleSuccessNext()
+    {
+        showGoalDialogSuccess = false;
+    }
+
+    private async Task DeleteGoal()
+    {
+        int currentUserId = CurrentUserService.CurrentUserId;
+        bool success = await GoalDataService.DeleteGoalAsync(currentUserId);
+
+        if (success)
+        {
+            hasGoal = false;
+        }
+    }
+}
